@@ -127,22 +127,15 @@ let FSHADER_SOURCE =
      //配置纹理图像
      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image)
      //分两次将0号纹理传递给着色器,1号纹理传递给着色器
-     if(unit===0){
-        gl.uniform1i(u_Sampler,0)
-     }else if(unit===1){
-        gl.uniform1i(u_Sampler,1)
-     } 
+     gl.uniform1i(u_Sampler,unit)
      //指定清空<canvas>颜色
      gl.clearColor(0.0, 0.0, 0.0, 1.0)
      //清空<canvas>
      gl.clear(gl.COLOR_BUFFER_BIT)
      //POINTS
-
      if(image1down && image2down){
         gl.drawArrays(gl.TRIANGLE_STRIP,0,n)
      }
-     
-
  }
 
 
