@@ -97,19 +97,19 @@ let FSHADER_SOURCE =
  function getViewMatrix(){
      let viewMatrix = new Matrix4()
      viewMatrix.setLookAt(0,0,5,0,0,-100,0,1,0)
-     return viewMatrix.elements
+     return viewMatrix
  }
  //计算投影矩阵
  function getProjMatrix(canvas){
      let projMatrix = new Matrix4()
      projMatrix.setPerspective(30,canvas.width/canvas.height,1,100)
-     return projMatrix.elements
+     return projMatrix
  }
  //计算模型矩阵
  function getModelMatrix(x=0.75,y=0,z=0){
     let modelMatrix = new Matrix4()
     modelMatrix.setTranslate(x, y, z); //平移0.75单位
-    return modelMatrix.elements
+    return modelMatrix
  }
 
  //执行绘制
@@ -117,10 +117,11 @@ function draw(gl, n, u_MvpMatrix,x,y,z,canvas) {
     let modelMatrix = getModelMatrix(x,y,z)
     let projMatrix = getProjMatrix(canvas)
     let viewMatrix = getViewMatrix()
+    let m = new Matrix4()
+ 
+    let MvpMatrix = m.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix)
 
-    let MvpMatrix = projMatrix * viewMatrix * modelMatrix
-
-    gl.uniformMatrix4fv(u_MvpMatrix,false,MvpMatrix)
+    gl.uniformMatrix4fv(u_MvpMatrix,false,MvpMatrix.elements)
     
    
     gl.clear(gl.COlOR_BUFFER_BIT);
