@@ -115,9 +115,9 @@ function draw(gl, n, u_ViewMatrix, viewMatrix,u_ProjMatrix,projMatrix) {
     //将视图矩阵传递给u_ViewMatrix变量
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
     //可视空间矩阵设置可视域
-    //projMatrix.setOrtho(-1.0,1.0,-1.0,1.0,0.0,2.0)//正常
+    projMatrix.setOrtho(-1.0,1.0,-1.0,1.0,0.0,2.0);//正常
     //projMatrix.setOrtho(-0.5,0.5,-0.5,0.5,0.0,1.0)//宽高减半，保持比例
-    projMatrix.setOrtho(-0.3,0.3,-1.0,1.0,0.0,0.5)//宽度减小一半
+    //projMatrix.setOrtho(-0.3,0.3,-1.0,1.0,0.0,0.5)//宽度减小一半
     //将可视空间矩阵传递给u_ProjMatrix变量
     gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
     gl.clear(gl.COlOR_BUFFER_BIT);
