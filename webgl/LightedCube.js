@@ -1,20 +1,27 @@
 let VSHADER_SOURCE = 
-    'attribute vec4 a_Position;' +
-    'attribute vec4 a_Color;' +
-    'uniform mat4 u_MvpMatrix;' +
+    'attribute vec4 a_Position;\n' +
+    'attribute vec4 a_Color;\n' + //表面基底色
+    'attribute vec4 a_Normal;\n' + //法向量
+    'uniform mat4 u_MvpMatrix;\n' + //光线颜色
+    'uniform vec3 u_LightColor;\n' + //归一化的世界坐标（入射光方向）
+    'uniform vec3 u_LightDirection;\n' +
     'varying vec4 v_Color;\n' +
-    'void main() {' +
-    '  gl_Position = u_MvpMatrix * a_Position;\n' +
-    '  v_Color = a_Color;\n' + //varying变量
-    '}';
+    'void main() {\n' +
+    'gl_Position = u_MvpMatrix * a_Position;\n' +//对法向量进行归一化
+    'vec3 normal = normalize(vec3(a_Normal));\n' + //对法向量进行归一化
+    'float nDotL = max(dot(u_LightDirection,normal),0.0);\n' + //计算光线方向和法向量的点积，即cos
+    'vec3 diffuse = u_LightColor * vec3(a_Color) * nDotL;\n' +          //最终计算漫反射光的颜色  
+    'v_Color = vec4(diffuse, a_Color.a);\n' +
+    '}\n';
 let FSHADER_SOURCE =
     //显式定义精确度
-    'precision mediump float;' +
+    'precision mediump float;\n' +
     'varying vec4 v_Color;\n' +
     'void main(){\n'+
     '  gl_FragColor = v_Color;\n'+//从顶点着色器接收数据
-    '}';
+    '}\n';
  function main(){
+     
     //获取canvas元素
     let canvas = document.getElementById("webgl");
     if(!canvas){
@@ -27,17 +34,35 @@ let FSHADER_SOURCE =
         console.log("Failed to get the rendering context for WebGL");
         return;
     }
+    
     //初始化着色器
     if(!initShaders(gl,VSHADER_SOURCE,FSHADER_SOURCE)){
         console.log("Failed to initialize shaders.");
         return;
     }
+    
     //设置顶点位置
     let n = initVertexBuffers(gl);
     if (n < 0) {
         console.log('Failed to set the positions of the vertices');
         return;
     }
+
+    //光照相关
+    //获取光线颜色变量
+    let u_LightColor = gl.getUniformLocation(gl.program,'u_LightColor')
+    //获取归一化坐标
+    let u_LightDirection = gl.getUniformLocation(gl.program,'u_LightDirection')
+
+    //设置光线颜色
+    gl.uniform3f(u_LightColor,1.0,0.4,0.0)
+    //设置光线方向(世界坐标系下)
+    let lightDirection = new Vector3([0.5,3.0,4.0])
+    lightDirection.normalize()//归一化
+    gl.uniform3fv(u_LightDirection,lightDirection.elements)
+
+
+
     //MVP矩阵
     let u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
     //注册键盘事件响应函数
@@ -62,12 +87,12 @@ let FSHADER_SOURCE =
         1.0,-1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0, 1.0,-1.0,   1.0, 1.0,-1.0   // v4-v7-v6-v5 back
     ])
     let colors = new Float32Array([     // Colors
-        0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  // v0-v1-v2-v3 front(blue)
-        0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  // v0-v3-v4-v5 right(green)
-        1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  // v0-v5-v6-v1 up(red)
-        1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  // v1-v6-v7-v2 left
-        1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  // v7-v4-v3-v2 down
-        0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0   // v4-v7-v6-v5 back
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,    // v0-v1-v2-v3 front
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,     // v0-v3-v4-v5 right
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,     // v0-v5-v6-v1 up
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,     // v1-v6-v7-v2 left
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,    // v7-v4-v3-v2 down
+        1, 1, 1,   1, 1, 1,   1, 1, 1,  1, 1, 1,　    // v4-v7-v6-v5 back
     ]);
     //顶点索引
     //顶点着色器程序将不再按照顶点本身的顺序而是根据索引进行绘制
@@ -79,7 +104,19 @@ let FSHADER_SOURCE =
         16,17,18,  16,18,19,    // down
         20,21,22,  20,22,23     // back
     ])
-
+    //法向量
+    let normals = new Float32Array([
+        0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
+        1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
+        0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
+        -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
+        0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,  // v7-v4-v3-v2 down
+        0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0   // v4-v7-v6-v5 back
+    ])
+    //创建法向量缓冲区对象
+    if(!initArrayBuffer(gl,normals,3,0,gl.FLOAT,'a_Normal')){
+        return -1;
+    }
     //创建顶点缓冲区对象
     if(!initArrayBuffer(gl,verticesColors,3,0,gl.FLOAT,'a_Position')){
         return -1;
@@ -120,6 +157,7 @@ let FSHADER_SOURCE =
 
  //执行绘制
 function draw(gl, n, u_MvpMatrix,x,y,z,canvas) {
+    
     let modelMatrix = getModelMatrix(x,y,z)
     let projMatrix = getProjMatrix(canvas)
     let viewMatrix = getViewMatrix()
@@ -130,9 +168,10 @@ function draw(gl, n, u_MvpMatrix,x,y,z,canvas) {
     gl.uniformMatrix4fv(u_MvpMatrix,false,MvpMatrix.elements)
     
     //同时清除颜色缓冲区和深度缓冲区
-    gl.clear(gl.COlOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     //此处的n表示索引数组的长度，而不是本身数据顶点的个数
     gl.drawElements(gl.TRIANGLES,n,gl.UNSIGNED_BYTE,0);
+    
 }
  //键盘监听
 let x = 0.75, y = 0, z = 0.25; //视点
@@ -158,6 +197,7 @@ function initArrayBuffer(gl, data, num,offset=0,type, attribute) {
         console.log('Failed to create the buffer object');
         return false;
     }
+    
     // Write date into the buffer object
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
