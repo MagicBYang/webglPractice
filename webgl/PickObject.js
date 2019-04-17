@@ -10,7 +10,6 @@ let VSHADER_SOURCE =
   '  gl_Position = u_MvpMatrix * a_Position;\n' +  
   '  v_TexCoord = a_TexCoord;\n' +
   '}\n';
-
 // Fragment shader program
 let FSHADER_SOURCE =
   '#ifdef GL_ES\n' +
@@ -202,7 +201,6 @@ function check(gl,n,x_in_canvas,y_in_canvas,u_Clicked,viewProjMatrix, u_MvpMatri
      picked = true
   }
   gl.uniform1i(u_Clicked,0)//重新正常绘制
-  draw(gl, n, viewProjMatrix, u_MvpMatrix, currentAngle)
   return picked
 }
 function initArrayBuffer(gl, data, num, type, attribute) {
